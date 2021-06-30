@@ -1,0 +1,4 @@
+带有search标签的文件为规划前随机的初始值,只不过这个初始值比较好;
+带有planed_outsearch为规划后的结果,可以把这个结果复制到priordata目录下作为系统先验引入;
+u_planed_outsearch_backup.txt 为从随机中求解较好的结果
+x_planed_outsearch_backup.txt 为从随机中求解较好的结果
