@@ -338,13 +338,13 @@ void runDircon(
     cout <<  trajopt.GetInitialGuess(xi)<<endl;
     cout <<  trajopt.GetInitialGuess(ui)<<endl;
   }
-  // for (int i = 0; i <  38; i++) 
-  // {
-  //   auto xi = trajopt.state(i);
-  //   auto ui = trajopt.input(i);
-  //   trajopt.SetInitialGuess(xi, global_init_x[i]);
-  //   trajopt.SetInitialGuess(ui, global_init_u[i]);
-  // }
+  for (int i = 0; i <  38; i++) 
+  {
+    auto xi = trajopt.state(i);
+    auto ui = trajopt.input(i);
+    trajopt.SetInitialGuess(xi, global_init_x[i]);
+    trajopt.SetInitialGuess(ui, global_init_u[i]);
+  }
   // for(int i=0;i<38;i++)
   // {
   //   auto xi = trajopt.state(i);
@@ -786,6 +786,36 @@ void runDircon(
     std::cout<<"print_localtime"<<std::endl;
     print_localtime();
     std::cout<<"trajopt.initial_guess().size(): "<<trajopt.initial_guess().size()<<std::endl;
+
+        //完全设置各个决策变量均一致 百分百复现
+        // int before_solve_backup = access("/home/cby/drake_learning/src/drake_learning_show_multistair/src/check_init/before_solve_backup.txt", 0);
+        // if(before_solve_backup==0)
+        // {
+        //   double data_u_ik;
+        //   std::fstream in_u_txt_file_ik;
+        //   in_u_txt_file_ik.open("/home/cby/drake_learning/src/drake_learning_show_multistair/src/check_init/before_solve_backup.txt", std::ios::out | std::ios::in);
+        //   //in_u_txt_file_ik.open("/home/cby/drake_learning/src/drake_learning_show_multistair/src/priordata/u_planed_outsearch.txt", std::ios::out | std::ios::in);
+        //   in_u_txt_file_ik << std::fixed;  
+        //   for(int i=0;i<1406;i++)
+        //   {
+        //       in_u_txt_file_ik>>data_u_ik;
+        //       trajopt.SetInitialGuess(trajopt.decision_variable(i),data_u_ik);
+        //   }
+        //   in_u_txt_file_ik.close();
+        // }
+
+    std::fstream before_solve;
+    before_solve.open("/home/cby/drake_learning/src/drake_learning_show_multistair/src/check_init/before_solve.txt", std::ios::out | std::ios::trunc);
+    std::cout<<"trajopt.decision_variable().size(): "<<trajopt.decision_variables().size()<<std::endl;
+    std::cout<<"trajopt.initial_guess().size(): "<<trajopt.initial_guess().size()<<std::endl;
+    for(int i=0;i<trajopt.initial_guess().size();i++)
+    {
+       std::cout<<trajopt.decision_variable(i)<<" data = "<<trajopt.initial_guess()[i]<<std::endl;
+       before_solve  <<std::fixed<<std::setprecision(8)<<trajopt.initial_guess()[i]<<std::endl;//8位有效数字<< std::setprecision(4)
+    }
+     before_solve.close();
+
+
   const auto result = Solve(trajopt, trajopt.initial_guess());//规划器求解结果 trajopt.initial_guess():Getter for the initial guess. 
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;//求解时长
@@ -1901,7 +1931,14 @@ int main(int argc, char* argv[])
         //}
         init_u.push_back(VectorXd::Random(nu));//u[i] 需要存储一个较优的先验
         std::cout<<"init_u="<<init_u[i]<<std::endl;
-        //init_u[i]=VectorXd::Zero(nu);
+        for(int l=0;l<init_x[i].size();l++)
+        {
+          init_x[i](l)=((int)(init_x[i](l)*100000000))/100000000.0;//保留小数点后8位
+        }
+        for(int l=0;l<init_u[i].size();l++)
+        {
+          init_u[i](l)=((int)(init_u[i](l)*100000000))/100000000.0;//保留小数点后8位
+        }
         global_init_x.push_back(init_x[i]);
         global_init_u.push_back(init_u[i]);
         //std::cout<<"init_xcols="<<init_x[i].cols()<<"init_xrows="<<init_x[i].rows()<<std::endl;
@@ -1940,6 +1977,8 @@ int main(int argc, char* argv[])
              //init_u[i](j)= 0;
               std::cout<<"init_u[i](j): "<<init_u[i](j)<<std::endl;
             }
+
+             global_init_u[i]=init_u[i];
           }
           in_u_txt_file_ik.close();
         }
@@ -1960,6 +1999,7 @@ int main(int argc, char* argv[])
               init_x[i](j)= data_x_ik;
               std::cout<<"init_x[i](j): "<<init_x[i](j)<<std::endl;
             }
+            global_init_x[i]=init_x[i];
           }
           in_x_txt_file_ik.close();
         }
